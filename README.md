@@ -5,7 +5,7 @@ Adaptive Bayesian stimulus placement of psychometric function for MATLAB.
 
 See `psytest.m` for documentation and a working usage example.
 
-This is a fairly bare implementation of Bayesian adaptive stimulus placement. For a comprehensive array of adaptive procedures and some pretty neat demos you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom.
+This is a fairly bare implementation of Bayesian adaptive stimulus placement. For a comprehensive array of adaptive procedures you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom, which has some pretty neat [demos](http://www.palamedestoolbox.org/pal_ampm_demo.html).
 
 ### Reference
 
