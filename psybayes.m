@@ -10,6 +10,8 @@ function [xnext,psy,output] = psybayes(psy,method,vars,xi,yi)
 %  Reference: 
 %  Kontsevich, L. L., & Tyler, C. W. (1999). "Bayesian adaptive estimation 
 %  of psychometric slope and threshold". Vision research, 39(16), 2729-2737.
+%
+%  See also PSYBAYES_PLOT, PSYTEST.
 
 % Copyright (C) 2016 Luigi Acerbi
 %

@@ -1,5 +1,9 @@
-%PSYTEST Test of PSYBAYES
+%PSYTEST Test and practical reference of PSYBAYES
 %
+%  Run PSYTEST for a demo of PSYBAYES.
+%  Read the comments to learn the usage of PSYBAYES.
+%
+%  See also PSYBAYES, PSYBAYES_PLOT.
 
 %--------------------------------------------------------------------------
 % Definitions for PSYBAYES

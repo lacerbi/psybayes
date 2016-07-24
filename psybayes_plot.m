@@ -1,8 +1,14 @@
-function psybayes_plot(psystruct,trueparams)
+function psybayes_plot(psystruct,refparams)
 %PSYBAYES_PLOT Plot psychometric function and posterior from PSYBAYES.
-%  PSYBAYES_PLOT(PSYSTRUCT) plots psychometric function and posterior
+%  PSYBAYES_PLOT(PSY) plots psychometric function and posterior over the
+%  parameters as returned by PSYBAYES.
+%
+%  PSYBAYES_PLOT(PSY,REFPARAMS) also plots the reference parameter values
+%  REFPARAMS=[MU,SIGMA,LAMBDA].
+%
+%  See also PSYBAYES, PSYTEST.
 
-if nargin < 2; trueparams = []; end
+if nargin < 2; refparams = []; end
 
 % Choose correct psychometric function (YES/NO or PCORRECT)
 if ~isempty(psystruct.gamma)
@@ -113,18 +119,18 @@ yl = get(gca,'Ylim'); axis([get(gca,'Xlim'),0,yl(2)]);
 
 set(gcf,'Color','w');
 
-% Add bars of true value
-if ~isempty(trueparams)
+% Add bars of reference parameterse
+if ~isempty(refparams)
     subplot(rows,cols,3);
-    plot(trueparams(1)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
+    plot(refparams(1)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
     subplot(rows,cols,2);
-    plot(trueparams(2)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
+    plot(refparams(2)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
     axis([get(gca,'Xlim'),get(gca,'Ylim')]);
     hl = plot([-1 -1],[-1 -1],'k','LineWidth',2);
     h = legend(hl, 'True parameter value');
     set(h,'Location','NorthEast','Box','off');
     subplot(rows,cols,4);
-    plot(trueparams(3)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
+    plot(refparams(3)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
 end
 
 end
