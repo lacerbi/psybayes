@@ -127,7 +127,7 @@ if ~isempty(refparams)
     plot(refparams(2)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);
     axis([get(gca,'Xlim'),get(gca,'Ylim')]);
     hl = plot([-1 -1],[-1 -1],'k','LineWidth',2);
-    h = legend(hl, 'True parameter value');
+    h = legend(hl, 'Reference parameter value');
     set(h,'Location','NorthEast','Box','off');
     subplot(rows,cols,4);
     plot(refparams(3)*[1 1],get(gca,'Ylim'),'k','LineWidth',2);

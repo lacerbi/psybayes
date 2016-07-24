@@ -1,15 +1,20 @@
 function [xnext,psy,output] = psybayes(psy,method,vars,xi,yi)
 %PSYBAYES Bayesian adaptive estimation of psychometric function.
 %
-%  PSYBAYES implements Kontsevich and Tyler (1999) Bayesian adaptive method
-%  for estimation of parameters of the psychometric function via
-%  maximization of information gain.
+%  PSYBAYES implements Kontsevich and Tyler's (1999) Bayesian adaptive 
+%  method PSI for estimation of parameters of the psychometric function via
+%  maximization of information gain. PSYBAYES also supports the 
+%  marginal-PSI method by Prins (2013).
 %
 %  See PSYTEST for documentation and a working usage example.
 %
 %  Reference: 
 %  Kontsevich, L. L., & Tyler, C. W. (1999). "Bayesian adaptive estimation 
 %  of psychometric slope and threshold". Vision research, 39(16), 2729-2737.
+%
+%  Prins, N. (2013). "The psi-marginal adaptive method: How to give nuisance 
+%  parameters the attention they deserve (no more, no less)". Journal of 
+%  vision, 13(7), 3-3.
 %
 %  See also PSYBAYES_PLOT, PSYTEST.
 
