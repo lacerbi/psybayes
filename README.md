@@ -14,11 +14,11 @@ The output of **Psybayes** can be plotted with `psybayes_plot.m`:
 
 This is a fairly bare implementation of Bayesian adaptive stimulus placement. For an array of adaptive procedures you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom, which has some pretty neat [demo](http://www.palamedestoolbox.org/pal_ampm_demo.html).
 
-### Reference
+### References
 
 Kontsevich, L. L., & Tyler, C. W. (1999). "Bayesian adaptive estimation of psychometric slope and threshold". *Vision research*, 39(16), 2729-2737. ([link](http://www.sciencedirect.com/science/article/pii/S0042698998002855))
 
-Prins, N. (2013). "The psi-marginal adaptive method: How to give nuisance parameters the attention they deserve (no more, no less)". *Journal of vision*, 13(7), 3-3.
+Prins, N. (2013). "The psi-marginal adaptive method: How to give nuisance parameters the attention they deserve (no more, no less)". *Journal of vision*, 13(7), 3-3. ([link](http://jov.arvojournals.org/article.aspx?articleid=2121598))
 
 ### License
 
