@@ -1,7 +1,7 @@
 # psybayes
 Adaptive Bayesian stimulus placement of psychometric function for MATLAB.
 
-`psybayes.m` implements Kontsevich and Tyler's (1999) Bayesian adaptive Ψ method for estimation of parameters of the psychometric function via maximization of information gain (including lapse, see Prins 2012). It also supports the marginal-Ψ method by Prins (2013). 
+`psybayes.m` implements Kontsevich and Tyler's (1999) Bayesian adaptive Ψ method for estimation of parameters of the psychometric function via maximization of information gain (including lapse; see Prins 2012). It also supports the marginal-Ψ method by Prins (2013). 
 
 See `psytest.m` for documentation and a working usage example.
 
