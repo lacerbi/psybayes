@@ -7,7 +7,7 @@ See `psytest.m` for documentation and a working usage example.
 
 ### Notes
 
-This is a fairly bare implementation of Bayesian adaptive stimulus placement. For a comprehensive array of adaptive procedures you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom, which has some pretty neat [demos](http://www.palamedestoolbox.org/pal_ampm_demo.html).
+This is a fairly bare implementation of Bayesian adaptive stimulus placement. For an array of adaptive procedures you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom, which has some pretty neat [demo](http://www.palamedestoolbox.org/pal_ampm_demo.html).
 
 ### Reference
 
