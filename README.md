@@ -1,6 +1,16 @@
 # psybayes
 Adaptive Bayesian stimulus placement of psychometric function for MATLAB.
 
+`psybayes.m` implements Kontsevich and Tyler (1999) Bayesian adaptive method for estimation of parameters of the psychometric function via maximization of information gain.
+
+See `psytest.m` for documentation and a working usage example.
+
+This is a fairly bare implementation of Bayesian adaptive stimulus placement. For a comprehensive array of adaptive procedures and some pretty neat demos you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom.
+
+### Reference
+
+Kontsevich, L. L., & Tyler, C. W. (1999). "Bayesian adaptive estimation of psychometric slope and threshold". *Vision research*, 39(16), 2729-2737. ([link](http://www.sciencedirect.com/science/article/pii/S0042698998002855))
+
 ### License
 
 This is free, open source software released under the GPL-3 License. See LICENSE.txt for details.
