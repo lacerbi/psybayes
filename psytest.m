@@ -23,6 +23,7 @@ if newsession
     psy.range.mu = [2,4,51];
     psy.range.sigma = [0.05,1,25];      % The range for sigma is automatically converted to log spacing
     psy.range.lambda = [0,0.4,25];
+    %psy.range.lambda = [0.05,0.05,1];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
     psy.priors.mu = [3,2];                  % mean and std of (truncated) Gaussian prior over MU
