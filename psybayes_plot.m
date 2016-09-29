@@ -37,6 +37,14 @@ hold off;
 fill([x fliplr(x)], [psimean+psisd, fliplr(psimean-psisd)], 0.8*[1 1 1], 'EdgeColor', 'none'); %, 'FaceColor', 0.8*[1 1 1]);
 hold on;
 plot(x, psimean,'k','LineWidth',1);
+if ~isempty(refparams)
+    psitrue = zeros(1,numel(x));
+    for ix = 1:numel(x)
+        psitrue(ix) = psychofun(x(ix),refparams(1),refparams(2),refparams(3),psy.gamma);
+    end
+    plot(x, psitrue, 'k','LineWidth',2);
+end
+
 
 if ~isempty(xnext)
     plot([xnext,xnext],[0,1],':r', 'LineWidth', 2);

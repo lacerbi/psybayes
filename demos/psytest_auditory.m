@@ -1,9 +1,6 @@
-%PSYTEST Test and practical reference of PSYBAYES
+%PSYTEST_AUDITORY Test of PSYBAYES for frequency discrimination experiment.
 %
-%  Run PSYTEST for a demo of PSYBAYES.
-%  Read the comments to learn the usage of PSYBAYES.
-%
-%  See also PSYBAYES, PSYBAYES_PLOT.
+%  See also PSYBAYES, PSYBAYES_PLOT, PSYTEST.
 
 %--------------------------------------------------------------------------
 % Definitions for PSYBAYES
@@ -14,29 +11,28 @@ if newsession
     psy = [];
 
     % Set chance level (for PCORRECT psychometric functions)
-    psy.gamma = 0.5;        
-    % psy.gamma = [];   % Leave it empty for YES/NO psychometric functions
+    psy.gamma = 0.5;
 
-    % You can specify a user-defined psychometric function (as a string)
+    % Specify user-defined psychometric function (as a string)
     psy.psychofun = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda,0.5*(1+erf(bsxfun(@rdivide,bsxfun(@minus,mu,x),sqrt(2)*sigma)))));';
     
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
-    psy.range.x = [1.5,4.5,61];
-    psy.range.mu = [2,4,51];
-    psy.range.sigma = [0.05,1,25];      % The range for sigma is automatically converted to log spacing
+    psy.range.x = [log(1000),log(8000),61];         % Stimulus range in log Hz
+    psy.range.mu = [log(1000),log(6000),51];        % Psychometric function mean in log Hz
+    psy.range.sigma = [0.1,2,25];                   % The range for sigma is automatically converted to log spacing
     psy.range.lambda = [0,0.1,25];
     %psy.range.lambda = [0.05,0.05,1];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
-    psy.priors.mu = [3,2];                  % mean and std of (truncated) Gaussian prior over MU
-    psy.priors.logsigma = [log(0.5),Inf];   % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
+    psy.priors.mu = [log(1000),2];                  % mean and std of (truncated) Gaussian prior over MU
+    psy.priors.logsigma = [0,Inf];   % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
     psy.priors.lambda = [2 50];             % alpha and beta parameter of beta pdf over LAMBDA
 
     % Units -- used just for plotting in axis labels and titles
-    psy.units.x = 'cm';
-    psy.units.mu = 'cm';
-    psy.units.sigma = 'cm';
+    psy.units.x = 'log Hz';
+    psy.units.mu = 'log Hz';
+    psy.units.sigma = 'log Hz';
     psy.units.lambda = [];
 else    
     filename = 'psy.mat';   % Choose your file name
@@ -51,8 +47,8 @@ plotflag = 1;       % Plot visualization
 %--------------------------------------------------------------------------
 
 % Parameters of simulated observer
-mu = 3.05;
-sigma = 0.2;
+mu = log(3000);
+sigma = 0.5;
 lambda = 0.05;
 gamma = psy.gamma;
 
