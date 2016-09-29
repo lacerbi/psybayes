@@ -29,7 +29,7 @@ function [xnext,psy,output] = psybayes(psy,method,vars,xi,yi)
 
 %   Author:     Luigi Acerbi
 %   Email:      luigi.acerbi@gmail.com
-%   Version:    24/Jul/2016
+%   Version:    29/Sep/2016
 
 
 if nargin < 1; psy = []; end
@@ -42,6 +42,7 @@ xnext = [];
 % Default method is expected entropy minimization
 if isempty(method); method = 'ent'; end
 
+% Marginal-PSI method, select parameters of interest
 if isempty(vars)
     switch lower(method)
         case 'ent'; vars = [1 1 1];
@@ -66,19 +67,17 @@ if isempty(psy) || ~isfield(psy,'post')
     else
         psy.forcesymmetry = 0;  
     end    
- 
+else
+    % Reset psychometric function
+    psy = psyfunset(psy);
 end
 
-% Choose correct psychometric function (YES/NO or PCORRECT)
-if ~isempty(psy.gamma)
-    psychofun = @(x_,mu_,sigma_,lambda_) psyfun_pcorrect(x_,mu_,sigma_,lambda_,psy.gamma);
-else    
-    psychofun = @(x_,mu_,sigma_,lambda_) psyfun_yesno(x_,mu_,sigma_,lambda_);
-end
+% Select psychometric function
+psychofun = str2func(psy.psychofun);
 
 % Precompute psychometric function
 if isempty(psy.f) || isempty(psy.mf)
-    psy.f = psychofun(psy.x,psy.mu,psy.sigma,psy.lambda);
+    psy.f = psychofun(psy.x,psy.mu,psy.sigma,psy.lambda,psy.gamma);
     psy.mf = 1 - psy.f;
 end
 
@@ -86,9 +85,9 @@ end
 if ~isempty(xi) && ~isempty(yi)    
     for i = 1:numel(xi)
         if yi(i) == 1
-            like = psychofun(xi(i),psy.mu,psy.sigma,psy.lambda);
+            like = psychofun(xi(i),psy.mu,psy.sigma,psy.lambda,psy.gamma);
         elseif yi(i) == 0
-            like = 1 - psychofun(xi(i),psy.mu,psy.sigma,psy.lambda); 
+            like = 1 - psychofun(xi(i),psy.mu,psy.sigma,psy.lambda,psy.gamma);
         end
         psy.post = psy.post.*like;
     end

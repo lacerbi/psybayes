@@ -138,3 +138,7 @@ psy.f = [];
 psy.mf = [];
 
 psy.xnext = [];
+
+% Set psychometric function
+if isfield(psyinfo,'psychofun'); psy.psychofun = psyinfo.psychofun; end
+psy = psyfunset(psy);

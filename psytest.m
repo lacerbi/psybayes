@@ -15,8 +15,11 @@ if newsession
 
     % Set chance level (for PCORRECT psychometric functions)
     psy.gamma = 0.5;        
-    % psyinit.gamma = [];   % Leave it empty for YES/NO psychometric functions
+    % psy.gamma = [];   % Leave it empty for YES/NO psychometric functions
 
+    % You can specify a user-defined psychometric function (as a string)
+    psy.psychofun = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda,0.5*(1+erf(bsxfun(@rdivide,bsxfun(@minus,mu,x),sqrt(2)*sigma)))));';
+    
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
     psy.range.x = [1.5,4.5,61];
@@ -51,14 +54,7 @@ plotflag = 1;       % Plot visualization
 mu = 3.05;
 sigma = 0.2;
 lambda = 0.05;
-
-% Psychometric function for the simulated observer
-if ~isfield(psy,'gamma') || isempty(psy.gamma)
-    psychofun = @(x) lambda/2 + (1-lambda).*0.5*(1+erf((x-mu)./(sqrt(2)*sigma)));
-else
-    gamma = psy.gamma;
-    psychofun = @(x) gamma + (1-gamma-lambda).*0.5*(1+erf((x-mu)./(sqrt(2)*sigma)));    
-end
+gamma = psy.gamma;
 
 %--------------------------------------------------------------------------
 % Start running
@@ -70,13 +66,16 @@ display('Press a key to simulate a trial.')
 % (last argument is a flag for plotting)
 [x,psy] = psybayes(psy, method, vars, [], []);
 
+% Get psychometric function (only for simulating observer's responses)
+psychofun = str2func(psy.psychofun);
+
 pause;
 
 Ntrials = 500;
 
 for iTrial = 1:Ntrials
     % Simulate observer's response given stimulus x
-    r = rand < psychofun(x);
+    r = rand < psychofun(x,mu,sigma,lambda,gamma);
 
     % Get next recommended point that minimizes predicted entropy 
     % given the current posterior and response r at x
