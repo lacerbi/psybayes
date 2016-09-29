@@ -14,6 +14,12 @@ The output of **Psybayes** can be plotted with `psybayes_plot.m`:
 
 This is a fairly bare implementation of Bayesian adaptive stimulus placement. For an array of adaptive procedures you could look at the [Palamedes](http://www.palamedestoolbox.org/) toolbox by Nicolaas Prins and Frederick Kingdom, which has some pretty neat [demo](http://www.palamedestoolbox.org/pal_ampm_demo.html).
 
+If you use this code for your experiment, you can mention it as:
+
+> We used Luigi Acerbi's MATLAB implementation of the PSI method (https://github.com/lacerbi/psybayes) by Kontsevich and Tyler (1999), extended to include the lapse rate (Prins 2012).
+
+If you use the PSI-marginal method, you should also cite Prins 2013.
+
 ### References
 
 Kontsevich, L. L., & Tyler, C. W. (1999). "Bayesian adaptive estimation of psychometric slope and threshold". *Vision Research*, 39(16), 2729-2737. ([link](http://www.sciencedirect.com/science/article/pii/S0042698998002855))
