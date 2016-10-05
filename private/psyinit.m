@@ -1,4 +1,4 @@
-function psy = psyinit(psyinfo)
+function [psy,Nfuns] = psyinit(psyinfo)
 %PSYINIT Initialize PSY struct.
 
 psy = [];
@@ -6,11 +6,21 @@ psy = [];
 psy.ntrial = 0;     % Trial number
 psy.data = [];      % Record of data
 
+if ~isfield(psyinfo,'psychofun'); psyinfo.psychofun = []; end
+if iscell(psyinfo.psychofun)
+    Nfuns = numel(psyinfo.psychofun);
+    cellflag = 1;
+else
+    Nfuns = 1;
+    cellflag = 0;
+end
+
 % Default grid sizes
-nx = 61;
-nmu = 51;
-nsigma = 25;
-nlambda = 25;
+K = 1/(Nfuns^0.25);
+nx = round(65*K);
+nmu = round(51*K);
+nsigma = round(25*K);
+nlambda = round(25*K);
 
 psy.mu = [];
 psy.logsigma = [];
@@ -121,8 +131,16 @@ priormu = priormu./sum(priormu);
 priorlogsigma = priorlogsigma./sum(priorlogsigma);
 priorlambda = priorlambda./sum(priorlambda);
 
-% Prior (posterior at iteration zero) over parameter vector theta
-psy.post = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
+% Prior (posterior at iteration zero) over parameters
+if cellflag || 1
+    psy.post{1} = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
+    for k = 2:Nfuns; psy.post{k} = psy.post{1}; end
+    if Nfuns > 1
+        for k = 1:Nfuns; psy.logupost{k} = log(psy.post{k}); end
+    end
+else
+    psy.post = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
+end
 
 % Define sigma in addition to log sigma
 psy.sigma = exp(psy.logsigma);
@@ -141,4 +159,17 @@ psy.xnext = [];
 
 % Set psychometric function
 if isfield(psyinfo,'psychofun'); psy.psychofun = psyinfo.psychofun; end
-psy = psyfunset(psy);
+[psy,Nfuns] = psyfunset(psy);
+
+% Prior over psychometric functions
+if Nfuns > 1
+    if isfield(psyinfo,'psychoprior')
+        psy.psychoprior = psyinfo.psychoprior;
+    else
+        psy.psychoprior = [];
+    end    
+    % Uniform prior by default
+    if isempty(psy.psychoprior)
+        psy.psychoprior = ones(1,Nfuns)/Nfuns;
+    end
+end
