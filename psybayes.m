@@ -31,12 +31,6 @@ function [xnext,psy,output] = psybayes(psy,method,vars,xi,yi)
 %   Email:      luigi.acerbi@gmail.com
 %   Version:    05/Oct/2016
 
-% TODO:
-% - Fix psytest.m
-% - Fix variance-based method
-% - Fix returned posterior moments
-
-
 if nargin < 1; psy = []; end
 if nargin < 2; method = []; end
 if nargin < 3; vars = []; end
@@ -173,14 +167,14 @@ if nargin > 0
     for k = 1:Nfuns
         % Compute posteriors at next step for R=1 and R=0
         [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k});
-
-        % Marginalize over unrequested variables
-        index = find(~vars);
-        for iTheta = index
-            post1(:,:,:,:,k) = sum(post1(:,:,:,:,k),iTheta);
-            post0(:,:,:,:,k) = sum(post0(:,:,:,:,k),iTheta);
-        end
     end
+    
+    % Marginalize over unrequested variables
+    index = find(~vars);
+    for iTheta = index
+        post1 = sum(post1,iTheta);
+        post0 = sum(post0,iTheta);
+    end    
         
     if Nfuns > 1
         w(1,1,1,1,:) = psy.psychopost;
@@ -190,8 +184,9 @@ if nargin > 0
     end
     
     switch lower(method)
-        case {'var','variance'}
-            error('Variance method not supported yet.');
+        case {'var','variance'}            
+            post0 = sum(bsxfun(@times, post0, w), 5);
+            post1 = sum(bsxfun(@times, post1, w), 5);            
             post1 = squeeze(post1);
             post0 = squeeze(post0);
             index = find(vars,1);
@@ -235,9 +230,10 @@ end
 
 % Compute parameter estimates
 if nargout > 2
+    w = psy.psychopost;
     
     % Compute mean and variance of the estimate of MU
-    postmu = sum(sum(psy.post,2),3);
+    postmu = marginalpost(psy.post,w,[2,3]);
     postmu = postmu./sum(postmu,1);
     emu = sum(postmu.*psy.mu,1);
     estd = sqrt(sum(postmu.*psy.mu.^2,1) - emu.^2);
@@ -245,7 +241,7 @@ if nargout > 2
     output.mu.std = estd;
     
     % Compute mean and variance of the estimate of LOGSIGMA and SIGMA
-    postlogsigma = sum(sum(psy.post,1),3);    
+    postlogsigma = marginalpost(psy.post,w,[1,3]);
     postlogsigma = postlogsigma./sum(postlogsigma,2);    
     emu = sum(postlogsigma.*psy.logsigma,2);
     estd = sqrt(sum(postlogsigma.*psy.logsigma.^2,2) - emu.^2);
@@ -260,7 +256,7 @@ if nargout > 2
     output.sigma.std = estd;
     
     % Compute mean and variance of the estimate of LAMBDA
-    postlambda = sum(sum(psy.post,1),2);
+    postlambda = marginalpost(psy.post,w,[1,2]);
     postlambda = postlambda./sum(postlambda,3);    
     emu = sum(postlambda.*psy.lambda,3);
     estd = sqrt(sum(postlambda.*psy.lambda.^2,3) - emu.^2);

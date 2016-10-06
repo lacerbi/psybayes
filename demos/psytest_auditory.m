@@ -14,14 +14,12 @@ if newsession
     psy.gamma = 0.5;
 
     % Specify user-defined psychometric function (as a string)
-    psy.psychofun{1} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda+gamma*lambda,0.5*(1+erf(bsxfun(@rdivide,bsxfun(@minus,mu,x),sqrt(2)*sigma)))));';
-    psy.psychofun{2} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda+gamma*lambda,1./(1+exp(bsxfun(@rdivide,bsxfun(@minus,x,mu),sigma)))));';
-    % psy.psychofun{3} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda,exp(-exp(bsxfun(@rdivide,bsxfun(@minus,x,bsxfun(@minus,mu,0.57721566490153286060*sqrt(6)/pi*sigma)),sqrt(6)/pi*sigma)))));';
-    psy.psychofun{3} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda+gamma*lambda,exp(-exp(bsxfun(@rdivide,bsxfun(@minus,x,mu),sqrt(6)/pi*sigma)))));';
+    psy.psychofun{1} = '@(x,mu,sigma,lambda,gamma) psyfun_pcorrect(-x,-mu,sigma,lambda,gamma,@psynormcdf);';
+    psy.psychofun{2} = '@(x,mu,sigma,lambda,gamma) psyfun_pcorrect(-x,-mu,sigma,lambda,gamma,@psylogicdf);';
+    psy.psychofun{3} = '@(x,mu,sigma,lambda,gamma) psyfun_pcorrect(-x,-mu,sigma,lambda,gamma,@psygumbelcdf);';
     
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
-    Nfuns = numel(psy.psychofun);
     psy.range.x = [log(1000),log(8000),41];         % Stimulus range in log Hz
     psy.range.mu = [log(1000),log(6000),25];        % Psychometric function mean in log Hz
     psy.range.sigma = [0.1,2,19];                   % The range for sigma is automatically converted to log spacing
@@ -44,15 +42,15 @@ else
 end
 
 method = 'ent';     % Minimize the expected posterior entropy
-% vars = [1 0 0];   % Minimize posterior entropy of the mean only
-vars = [1 1 1];     % Minimize joint posterior entropy of mean, sigma and lambda
+vars = [1 1 0];     % Minimize posterior entropy of mean and sigma
+% vars = [1 1 1];     % Minimize joint posterior entropy of mean, sigma and lambda
 plotflag = 1;       % Plot visualization
 
 %--------------------------------------------------------------------------
 
 % Parameters of simulated observer
 mu = log(1500);
-sigma = 0.5;
+sigma = 0.6;
 lambda = 0.05;
 gamma = psy.gamma;
 
@@ -84,7 +82,7 @@ EasyRate = 0.1;    % Frequency of easy trials
 for iTrial = 1:Ntrials
 
     if rand < EasyRate
-        % Simulate observer's response to any easy trial (only lapse/guessing)
+        % Simulate observer's response to an easy trial (only lapse/guessing)
         x = Inf;
         if isempty(gamma)
             r = rand < 1-lambda/2;
@@ -99,7 +97,7 @@ for iTrial = 1:Ntrials
     % Get next recommended point that minimizes predicted entropy 
     % given the current posterior and response r at x
     tic
-    [x, psy] = psy bayes(psy, method, vars, x, r);
+    [x, psy] = psybayes(psy, method, vars, x, r);
     toc
 
     if plotflag

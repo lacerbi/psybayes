@@ -132,15 +132,9 @@ priorlogsigma = priorlogsigma./sum(priorlogsigma);
 priorlambda = priorlambda./sum(priorlambda);
 
 % Prior (posterior at iteration zero) over parameters
-if cellflag || 1
-    psy.post{1} = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
-    for k = 2:Nfuns; psy.post{k} = psy.post{1}; end
-    if Nfuns > 1
-        for k = 1:Nfuns; psy.logupost{k} = log(psy.post{k}); end
-    end
-else
-    psy.post = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
-end
+psy.post{1} = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
+for k = 2:Nfuns; psy.post{k} = psy.post{1}; end
+for k = 1:Nfuns; psy.logupost{k} = log(psy.post{k}); end
 
 % Define sigma in addition to log sigma
 psy.sigma = exp(psy.logsigma);

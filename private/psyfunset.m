@@ -35,9 +35,9 @@ if ~isempty(psy.psychofun)
 else
     % Default psychometric functions (for YES/NO or PCORRECT)
     if ~isempty(psy.gamma)
-        psy.psychofun = '@(x_,mu_,sigma_,lambda_,gamma_) psyfun_pcorrect(x_,mu_,sigma_,lambda_,gamma_)';
+        psy.psychofun{1} = '@(x_,mu_,sigma_,lambda_,gamma_) psyfun_pcorrect(x_,mu_,sigma_,lambda_,gamma_,@psynormcdf)';
     else
-        psy.psychofun = '@(x_,mu_,sigma_,lambda_,gamma_) psyfun_yesno(x_,mu_,sigma_,lambda_)';
+        psy.psychofun{1} = '@(x_,mu_,sigma_,lambda_,gamma_) psyfun_yesno(x_,mu_,sigma_,lambda_,gamma_,@psynormcdf)';
     end    
 end
 
