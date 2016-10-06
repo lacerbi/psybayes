@@ -67,7 +67,7 @@ display('Press a key to simulate a trial.')
 
 % Get first recommended point under the chosen optimization method
 % (last argument is a flag for plotting)
-[x,psy] = psymultibayes(psy, method, vars, [], []);
+[x,psy] = psybayes(psy, method, vars, [], []);
 
 % Get psychometric function (only for simulating observer's responses)
 psychofun = str2func(psy.psychofun);
@@ -83,7 +83,7 @@ for iTrial = 1:Ntrials
     % Get next recommended point that minimizes predicted entropy 
     % given the current posterior and response r at x
     tic
-    [x, psy] = psymultibayes(psy, method, vars, x, r);
+    [x, psy] = psybayes(psy, method, vars, x, r);
     toc
 
     if plotflag

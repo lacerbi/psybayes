@@ -29,7 +29,12 @@ function [xnext,psy,output] = psybayes(psy,method,vars,xi,yi)
 
 %   Author:     Luigi Acerbi
 %   Email:      luigi.acerbi@gmail.com
-%   Version:    29/Sep/2016
+%   Version:    05/Oct/2016
+
+% TODO:
+% - Fix psytest.m
+% - Fix variance-based method
+% - Fix returned posterior moments
 
 
 if nargin < 1; psy = []; end
@@ -58,7 +63,7 @@ if isempty(psy) || ~isfield(psy,'post')
     
     % Call initialization function
     psyinfo = psy;
-    psy = psyinit(psyinfo);
+    [psy,Nfuns] = psyinit(psyinfo);
     
     % Enforce symmetry of test stimuli? (symmetric wrt left/right of the 
     % mean of the psychometric curve)
@@ -69,37 +74,84 @@ if isempty(psy) || ~isfield(psy,'post')
     end    
 else
     % Reset psychometric function
-    psy = psyfunset(psy);
+    [psy,Nfuns] = psyfunset(psy);
 end
 
 % Select psychometric function
-psychofun = str2func(psy.psychofun);
-
+if ~iscell(psy.psychofun)
+    psychofun{1} = str2func(psy.psychofun);
+else
+    for k = 1:Nfuns
+        psychofun{k} = str2func(psy.psychofun{k});
+    end
+end
+    
 % Precompute psychometric function
 if isempty(psy.f) || isempty(psy.mf)
-    psy.f = psychofun(psy.x,psy.mu,psy.sigma,psy.lambda,psy.gamma);
-    psy.mf = 1 - psy.f;
+    for k = 1:Nfuns
+        psy.f{k} = psychofun{k}(psy.x,psy.mu,psy.sigma,psy.lambda,psy.gamma);
+        psy.mf{k} = 1 - psy.f{k};
+    end
 end
 
 % Update log posterior given the new data points XI, YI
-if ~isempty(xi) && ~isempty(yi)    
-    for i = 1:numel(xi)
-        if yi(i) == 1
-            like = psychofun(xi(i),psy.mu,psy.sigma,psy.lambda,psy.gamma);
-        elseif yi(i) == 0
-            like = 1 - psychofun(xi(i),psy.mu,psy.sigma,psy.lambda,psy.gamma);
+if ~isempty(xi) && ~isempty(yi)
+    for k = 1:Nfuns
+        for i = 1:numel(xi)
+            if isinf(xi(i))
+                if isempty(psy.gamma)
+                    if yi(i) == 1
+                        like = 1-psy.lambda/2;
+                    elseif yi(i) == 0
+                        like = psy.lambda/2;
+                    end                    
+                else
+                    if yi(i) == 1
+                        like = 1-psy.lambda*(1-psy.gamma);
+                    elseif yi(i) == 0
+                        like = psy.lambda*(1-psy.gamma);
+                    end
+                end
+            else
+                if yi(i) == 1
+                    like = psychofun{k}(xi(i),psy.mu,psy.sigma,psy.lambda,psy.gamma);
+                elseif yi(i) == 0
+                    like = 1 - psychofun{k}(xi(i),psy.mu,psy.sigma,psy.lambda,psy.gamma);
+                end
+            end
+            
+            % Save unnormalized log posterior
+            psy.logupost{k} = bsxfun(@plus, psy.logupost{k}, log(like));
+
+            % Compute normalized posterior
+            psy.post{k} = exp(psy.logupost{k} - max(psy.logupost{k}(:)));            
+            psy.post{k} = psy.post{k}./sum(psy.post{k}(:));
         end
-        psy.post = psy.post.*like;
     end
-    psy.post = psy.post./sum(psy.post(:));
     
     psy.ntrial = psy.ntrial + numel(xi);
     psy.data = [psy.data; xi(:) yi(:)];
 end
 
+% Compute posterior over psychometric functions
+if Nfuns > 1
+    logp = log(psy.psychoprior);
+    for k = 1:Nfuns
+        logp(k) = logp(k) + logsumexp(psy.logupost{k}(:));
+    end
+    psy.psychopost = exp(logp - max(logp));
+    psy.psychopost = psy.psychopost ./ sum(psy.psychopost);
+    psy.psychopost
+else
+    psy.psychopost = 1;
+end
+
 % Compute mean of the posterior of mu
-postmu = sum(sum(psy.post,2),3);
-emu = sum(postmu.*psy.mu);
+postmu = zeros(numel(psy.mu),Nfuns);
+for k = 1:Nfuns
+    postmu(:,k) = sum(sum(psy.post{k},2),3);
+end
+emu = sum(sum(bsxfun(@times, bsxfun(@times, psy.psychopost, postmu), psy.mu),2),1);
 
 % Randomly remove half of the x
 if psy.forcesymmetry
@@ -110,21 +162,36 @@ end
 
 % Compute sampling point X that minimizes expected chosen criterion
 if nargin > 0
+    
+    Nx = numel(psy.x);
         
     xred = psy.x(xindex);
+    r1 = zeros(1,1,1,Nx,Nfuns);
+    post1 = zeros([size(psy.post{1}),Nx,Nfuns]);
+    post0 = zeros([size(psy.post{1}),Nx,Nfuns]);
     
-    % Compute posteriors at next step for R=1 and R=0
-    [post1,post0,r1] = nextposterior(psy.f(:,:,:,xindex),psy.post);
+    for k = 1:Nfuns
+        % Compute posteriors at next step for R=1 and R=0
+        [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k});
 
-    % Marginalize over unrequested variables
-    index = find(~vars);
-    for iTheta = index
-        post1 = sum(post1,iTheta);
-        post0 = sum(post0,iTheta);
+        % Marginalize over unrequested variables
+        index = find(~vars);
+        for iTheta = index
+            post1(:,:,:,:,k) = sum(post1(:,:,:,:,k),iTheta);
+            post0(:,:,:,:,k) = sum(post0(:,:,:,:,k),iTheta);
+        end
+    end
+        
+    if Nfuns > 1
+        w(1,1,1,1,:) = psy.psychopost;
+        post1 = bsxfun(@times, w, post1);
+        post0 = bsxfun(@times, w, post0);
+        r1 = sum(bsxfun(@times, w, r1), 5);
     end
     
     switch lower(method)
         case {'var','variance'}
+            error('Variance method not supported yet.');
             post1 = squeeze(post1);
             post0 = squeeze(post0);
             index = find(vars,1);
@@ -148,6 +215,10 @@ if nargin > 0
             for iTheta = find(vars)
                 H1 = sum(H1,iTheta);
                 H0 = sum(H0,iTheta);
+            end
+            if Nfuns > 1
+                H1 = sum(H1,5);
+                H0 = sum(H0,5);
             end
             target = r1(:).*H1(:) + (1-r1(:)).*H0(:);
             

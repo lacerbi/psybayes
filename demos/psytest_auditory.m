@@ -14,15 +14,19 @@ if newsession
     psy.gamma = 0.5;
 
     % Specify user-defined psychometric function (as a string)
-    psy.psychofun = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda,0.5*(1+erf(bsxfun(@rdivide,bsxfun(@minus,mu,x),sqrt(2)*sigma)))));';
+    psy.psychofun{1} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda+gamma*lambda,0.5*(1+erf(bsxfun(@rdivide,bsxfun(@minus,mu,x),sqrt(2)*sigma)))));';
+    psy.psychofun{2} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda+gamma*lambda,1./(1+exp(bsxfun(@rdivide,bsxfun(@minus,x,mu),sigma)))));';
+    % psy.psychofun{3} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda,exp(-exp(bsxfun(@rdivide,bsxfun(@minus,x,bsxfun(@minus,mu,0.57721566490153286060*sqrt(6)/pi*sigma)),sqrt(6)/pi*sigma)))));';
+    psy.psychofun{3} = '@(x,mu,sigma,lambda,gamma) bsxfun(@plus, gamma, bsxfun(@times,1-gamma-lambda+gamma*lambda,exp(-exp(bsxfun(@rdivide,bsxfun(@minus,x,mu),sqrt(6)/pi*sigma)))));';
     
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
-    psy.range.x = [log(1000),log(8000),61];         % Stimulus range in log Hz
-    psy.range.mu = [log(1000),log(6000),51];        % Psychometric function mean in log Hz
-    psy.range.sigma = [0.1,2,25];                   % The range for sigma is automatically converted to log spacing
-    psy.range.lambda = [0,0.1,25];
-    %psy.range.lambda = [0.05,0.05,1];  % This would fix the lapse rate to 0.05
+    Nfuns = numel(psy.psychofun);
+    psy.range.x = [log(1000),log(8000),41];         % Stimulus range in log Hz
+    psy.range.mu = [log(1000),log(6000),25];        % Psychometric function mean in log Hz
+    psy.range.sigma = [0.1,2,19];                   % The range for sigma is automatically converted to log spacing
+    psy.range.lambda = [0,0.15,11];
+    % psy.range.lambda = [0.05,0.05,2];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
     psy.priors.mu = [log(1000),2];                  % mean and std of (truncated) Gaussian prior over MU
@@ -47,7 +51,7 @@ plotflag = 1;       % Plot visualization
 %--------------------------------------------------------------------------
 
 % Parameters of simulated observer
-mu = log(3000);
+mu = log(1500);
 sigma = 0.5;
 lambda = 0.05;
 gamma = psy.gamma;
@@ -70,20 +74,32 @@ display('Press a key to simulate a trial.')
 [x,psy] = psybayes(psy, method, vars, [], []);
 
 % Get psychometric function (only for simulating observer's responses)
-psychofun = str2func(psy.psychofun);
+psychofun = str2func(psy.psychofun{1});
 
 pause;
 
 Ntrials = 500;
+EasyRate = 0.1;    % Frequency of easy trials
 
 for iTrial = 1:Ntrials
-    % Simulate observer's response given stimulus x
-    r = rand < psychofun(x,mu,sigma,lambda,gamma);
 
+    if rand < EasyRate
+        % Simulate observer's response to any easy trial (only lapse/guessing)
+        x = Inf;
+        if isempty(gamma)
+            r = rand < 1-lambda/2;
+        else
+            r = rand < 1-lambda*(1-gamma);            
+        end
+    else
+        % Simulate observer's response given stimulus x
+        r = rand < psychofun(x,mu,sigma,lambda,gamma);        
+    end
+    
     % Get next recommended point that minimizes predicted entropy 
     % given the current posterior and response r at x
     tic
-    [x, psy] = psybayes(psy, method, vars, x, r);
+    [x, psy] = psy bayes(psy, method, vars, x, r);
     toc
 
     if plotflag

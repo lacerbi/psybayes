@@ -11,7 +11,15 @@ function psybayes_plot(psy,refparams)
 if nargin < 2; refparams = []; end
 
 % Get psychometric function
-psychofun = str2func(psy.psychofun);
+if ~iscell(psy.psychofun)
+    psychofun{1} = str2func(psy.psychofun);
+    Nfuns = 1;
+else
+    Nfuns = numel(psy.psychofun);
+    for k = 1:Nfuns
+        psychofun{k} = str2func(psy.psychofun{k});
+    end
+end
 
 % Arrange figure panels in a 2 x 2 vignette
 rows = 2; cols = 2;
@@ -23,13 +31,20 @@ xnext = psy.xnext;
 % Plot psychometric function
 subplot(rows,cols,1);
 
-psimean = zeros(1,numel(x));    psisd = zeros(1,numel(x));
-post = psy.post(:);
+psimean = zeros(1,numel(x));
+psitemp = zeros(Nfuns,1);
+psisd = zeros(Nfuns,numel(x));
+post = psy.post;
 for ix = 1:numel(x)
-    f = psychofun(x(ix),psy.mu,psy.sigma,psy.lambda,psy.gamma);
-    psimean(ix) = sum(f(:).*post);
-    psisd(ix) = sqrt(sum(f(:).^2.*post) - psimean(ix)^2);
-end    
+    for k = 1:Nfuns
+        f = psychofun{k}(x(ix),psy.mu,psy.sigma,psy.lambda,psy.gamma);
+        psitemp(k) = sum(f(:)'.*post{k}(:)');
+        psisd(k,ix) = sum(f(:)'.^2.*post{k}(:)');
+    end
+    psimean(ix) = sum(bsxfun(@times, psitemp, psy.psychopost'),1);    
+end
+
+psisd = sqrt(sum(bsxfun(@times, psy.psychopost',psisd),1) - psimean.^2);
 hold off;
 %area(x, psimean + psisd, 'EdgeColor', 'none', 'FaceColor', 0.8*[1 1 1]);
 %hold on;
@@ -38,11 +53,14 @@ fill([x fliplr(x)], [psimean+psisd, fliplr(psimean-psisd)], 0.8*[1 1 1], 'EdgeCo
 hold on;
 plot(x, psimean,'k','LineWidth',1);
 if ~isempty(refparams)
-    psitrue = zeros(1,numel(x));
-    for ix = 1:numel(x)
-        psitrue(ix) = psychofun(x(ix),refparams(1),refparams(2),refparams(3),psy.gamma);
+    psitrue = zeros(Nfuns,numel(x));
+    % for k = 1:Nfuns
+    for k = 1
+        for ix = 1:numel(x)
+            psitrue(k,ix) = psychofun{k}(x(ix),refparams(1),refparams(2),refparams(3),psy.gamma);
+        end
     end
-    plot(x, psitrue, 'k','LineWidth',2);
+    plot(x, psitrue(1,:), 'k','LineWidth',2);
 end
 
 
@@ -66,7 +84,8 @@ title(['Psychometric function (trial ' num2str(num2str(psy.ntrial)) ')']);
 % Plot posterior for mu
 if numel(psy.mu) > 1
     subplot(rows,cols,3);
-    y = sum(sum(psy.post,2),3);
+    y = marginalpost(psy.post,psy.psychopost,[2,3]);
+    % y = sum(sum(psy.post,2),3);
     y = y/sum(y*diff(psy.mu(1:2)));    
     hold off;
     plot(psy.mu(:), y(:), 'k', 'LineWidth', 1);
@@ -90,7 +109,8 @@ end
 % Plot posterior for sigma
 if numel(psy.sigma) > 1
     subplot(rows,cols,2); hold off;
-    y = sum(sum(psy.post,1),3);
+    y = marginalpost(psy.post,psy.psychopost,[1,3]);
+    % y = sum(sum(psy.post,1),3);
     y = y/sum(y*diff(psy.sigma(1:2)));
     plot(psy.sigma(:), y(:), 'k', 'LineWidth', 1); hold on;
     box off; set(gca,'TickDir','out','XScale','log');
@@ -111,7 +131,8 @@ end
 % Plot posterior for lambda
 if numel(psy.lambda) > 1
     subplot(rows,cols,4); hold off;
-    y = sum(sum(psy.post,1),2);    
+    % y = sum(sum(psy.post,1),2);    
+    y = marginalpost(psy.post,psy.psychopost,[1,2]);
     y = y/sum(y*diff(psy.lambda(1:2)));
     plot(psy.lambda(:), y(:), 'k', 'LineWidth', 1); hold on;
     box off; set(gca,'TickDir','out');
@@ -154,4 +175,18 @@ if ~isempty(refparams)
     set(h,'Location','NorthEast','Box','off');
 end
 
+end
+
+%--------------------------------------------------------------------------
+function y = marginalpost(post,w,idx)
+%MARGINALPOST Compute marginal posterior
+
+    Nfuns = numel(post);
+    for k = 1:Nfuns
+        for j = idx
+            post{k} = sum(post{k},j);
+        end
+    end    
+    y = zeros(size(post{1}));
+    for k = 1:Nfuns; y = y + w(k)*post{k}; end
 end
