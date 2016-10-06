@@ -108,8 +108,8 @@ priormu = exp(-0.5.*((psy.mu-muprior(1))/muprior(2)).^2);
 % space); more in general log-normal prior
 logsigmaprior = [mean(psy.logsigma),Inf];    % mean and std
 if isfield(psyinfo,'priors') && ~isempty(psyinfo.priors)
-    if isfield(psyinfo.priors,'sigmaprior') && ~isempty(psyinfo.priors.sigmaprior)
-        logsigmaprior = psyinfo.priors.logsigmaprior;        
+    if isfield(psyinfo.priors,'logsigma') && ~isempty(psyinfo.priors.logsigma)
+        logsigmaprior = psyinfo.priors.logsigma;
     end
 end
 priorlogsigma = exp(-0.5.*((psy.logsigma-logsigmaprior(1))/logsigmaprior(2)).^2);  

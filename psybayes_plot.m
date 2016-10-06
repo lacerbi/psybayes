@@ -46,11 +46,20 @@ end
 
 psisd = sqrt(sum(bsxfun(@times, psy.psychopost',psisd),1) - psimean.^2);
 hold off;
+
 %area(x, psimean + psisd, 'EdgeColor', 'none', 'FaceColor', 0.8*[1 1 1]);
 %hold on;
 %area(x, psimean - psisd, 'EdgeColor', 'none', 'FaceColor', [1 1 1]);
 fill([x fliplr(x)], [psimean+psisd, fliplr(psimean-psisd)], 0.8*[1 1 1], 'EdgeColor', 'none'); %, 'FaceColor', 0.8*[1 1 1]);
 hold on;
+
+% Plot expected target value (rescaled)
+if isfield(psy,'target') && ~isempty(psy.target)
+    y = psy.target;
+    y = 0.1*(y - min(y))./(max(y)-min(y));
+    plot(x,y,'b-','LineWidth',1); hold on;    
+end
+
 plot(x, psimean,'k','LineWidth',1);
 if ~isempty(refparams)
     psitrue = zeros(Nfuns,numel(x));

@@ -84,7 +84,6 @@ end
 if isempty(psy.f) || isempty(psy.mf)
     for k = 1:Nfuns
         psy.f{k} = psychofun{k}(psy.x,psy.mu,psy.sigma,psy.lambda,psy.gamma);
-        psy.mf{k} = 1 - psy.f{k};
     end
 end
 
@@ -129,13 +128,12 @@ end
 
 % Compute posterior over psychometric functions
 if Nfuns > 1
-    logp = log(psy.psychoprior);
+    logp = zeros(1,Nfuns);
     for k = 1:Nfuns
-        logp(k) = logp(k) + logsumexp(psy.logupost{k}(:));
+        logp(k) = logsumexp(psy.logupost{k}(:));
     end
     psy.psychopost = exp(logp - max(logp));
     psy.psychopost = psy.psychopost ./ sum(psy.psychopost);
-    psy.psychopost
 else
     psy.psychopost = 1;
 end
@@ -217,10 +215,30 @@ if nargin > 0
             end
             target = r1(:).*H1(:) + (1-r1(:)).*H0(:);
             
+        case {'proj','projection'}
+            Nsteps = 4; 
+            max(r1)
+            anchors = linspace(0.5, max(r1), Nsteps+1);
+            anchors = anchors(2:end);
+            target = zeros(Nx,1);
+            for jj = 1:numel(anchors)
+                for k = 1:Nfuns
+                    [~,idx(:,:,:,1,k)] = min(abs(psy.f{k}-anchors(jj)),[],4);
+                end
+                mean1 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post1,idx),1),2),3)),5);
+                mean0 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post0,idx),1),2),3)),5);
+                var1 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post1,idx.^2),1),2),3)),5) - mean1.^2;
+                var0 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post0,idx.^2),1),2),3)),5) - mean0.^2;
+                target = target + r1(:).*var1(:) + (1-r1(:)).*var0(:);
+            end
+            
         otherwise
             error('Unknown method. Allowed methods are ''var'' and ''ent'' for, respectively, predicted variance and predicted entropy minimization.');
     end
 
+    % Store target for plotting
+    psy.target = target(:)';
+    
     % Location X that minimizes target metric
     [~,index] = min(target);
     xnext = xred(index);
@@ -265,9 +283,8 @@ if nargout > 2
 end
 
 % Only one argument assumes that this is the final call
-if nargin < 2
-    % Empty some memory
-    psy.f = []; psy.mf = [];
+if nargin < 2    
+    psy.f = [];     % Empty some memory
 end
 
 end

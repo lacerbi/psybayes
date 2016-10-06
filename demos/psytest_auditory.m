@@ -20,22 +20,24 @@ if newsession
     
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
-    psy.range.x = [log(1000),log(8000),41];         % Stimulus range in log Hz
-    psy.range.mu = [log(1000),log(6000),25];        % Psychometric function mean in log Hz
-    psy.range.sigma = [0.1,2,19];                   % The range for sigma is automatically converted to log spacing
-    psy.range.lambda = [0,0.15,11];
-    % psy.range.lambda = [0.05,0.05,2];  % This would fix the lapse rate to 0.05
+    MinFreq = 1500;     % Minimum frequency (best is somewhere above 1000 Hz)
+    psy.range.x = [log(MinFreq),log(8000),61];      % Stimulus range in log Hz
+    psy.range.mu = [log(MinFreq),log(6000),31];     % Psychometric function mean in log Hz
+    psy.range.sigma = [0.1,2,21];                   % The range for sigma is automatically converted to log spacing
+    psy.range.lambda = [0,0.15,15];
+    % psy.range.lambda = [0.05-eps,0.05+eps,2];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
-    psy.priors.mu = [log(1000),2];                  % mean and std of (truncated) Gaussian prior over MU
-    psy.priors.logsigma = [0,Inf];   % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
-    psy.priors.lambda = [2 50];             % alpha and beta parameter of beta pdf over LAMBDA
+    psy.priors.mu = [log(MinFreq),2];   % mean and std of (truncated) Gaussian prior over MU
+    psy.priors.logsigma = [0,1];        % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
+    psy.priors.lambda = [2 50];         % alpha and beta parameters of beta pdf over LAMBDA
 
     % Units -- used just for plotting in axis labels and titles
     psy.units.x = 'log Hz';
     psy.units.mu = 'log Hz';
     psy.units.sigma = 'log Hz';
     psy.units.lambda = [];
+    psy.units.psychofun = {'Normal','Logistic','Gumbel'};
 else    
     filename = 'psy.mat';   % Choose your file name
     load(filename,'psy');   % Load PSY structure from file
@@ -49,9 +51,9 @@ plotflag = 1;       % Plot visualization
 %--------------------------------------------------------------------------
 
 % Parameters of simulated observer
-mu = log(1500);
-sigma = 0.6;
-lambda = 0.05;
+mu = log(3000);
+sigma = 0.4;
+lambda = 0.07;
 gamma = psy.gamma;
 
 %--------------------------------------------------------------------------
@@ -105,6 +107,11 @@ for iTrial = 1:Ntrials
         psybayes_plot(psy,trueparams);
     end
     
+    % Print posterior over distinct psychometric curves
+    for k = 1:numel(psy.psychofun)
+        if k < numel(psy.psychofun); sep = ', '; else sep = '.  '; end
+        fprintf(['%s: %.3f' sep], psy.units.psychofun{k}, psy.psychopost(k));
+    end
     drawnow;    
     % pause;
 end
