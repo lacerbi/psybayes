@@ -85,6 +85,12 @@ if isempty(psy.x)
     psy.x(1,1,1,:) = linspace(psy.mu(1),psy.mu(end),nx);
 end
 
+if 0
+    x = [psy.x(:); Inf];
+    psy.x = [];
+    psy.x(1,1,1,:) = x;
+end
+
 if isfield(psyinfo,'units')
     psy.units = psyinfo.units;
 else

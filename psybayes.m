@@ -84,6 +84,15 @@ end
 if isempty(psy.f) || isempty(psy.mf)
     for k = 1:Nfuns
         psy.f{k} = psychofun{k}(psy.x,psy.mu,psy.sigma,psy.lambda,psy.gamma);
+        % Check if last stimulus is easy stimulus (by default Inf)
+        if psy.x(end) == Inf
+            if isempty(psy.gamma)
+                temp(1,1,:) = 1-psy.lambda/2;            
+            else
+                temp(1,1,:) = 1-psy.lambda*(1-psy.gamma);
+            end
+            psy.f{k}(:,:,:,end) = repmat(temp,[numel(psy.mu),numel(psy.logsigma),1]);
+        end
     end
 end
 
@@ -154,17 +163,26 @@ end
 
 % Compute sampling point X that minimizes expected chosen criterion
 if nargin > 0
-    
+        
     Nx = numel(psy.x);
         
     xred = psy.x(xindex);
     r1 = zeros(1,1,1,Nx,Nfuns);
     post1 = zeros([size(psy.post{1}),Nx,Nfuns]);
     post0 = zeros([size(psy.post{1}),Nx,Nfuns]);
+    if Nfuns > 1
+        u1 = zeros(1,1,1,Nx,Nfuns);
+        u0 = zeros(1,1,1,Nx,Nfuns);
+    end
     
     for k = 1:Nfuns
-        % Compute posteriors at next step for R=1 and R=0
-        [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k});
+        if Nfuns > 1
+            % Compute posteriors and unnormalized model evidence at next step for R=1 and R=0
+            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k),u1(1,1,1,:,k),u0(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k},psy.logupost{k});
+        else
+            % Compute posteriors at next step for R=1 and R=0
+            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k});
+        end
     end
     
     % Marginalize over unrequested variables
@@ -175,18 +193,20 @@ if nargin > 0
     end    
         
     if Nfuns > 1
+        u0 = exp(bsxfun(@minus, u0, max(u0,[],5)));
+        u0 = bsxfun(@rdivide,u0,sum(u0,5));
+        u1 = exp(bsxfun(@minus, u1, max(u1,[],5)));
+        u1 = bsxfun(@rdivide,u1,sum(u1,5));
+        post1 = bsxfun(@times, u1, post1);
+        post0 = bsxfun(@times, u0, post0);
         w(1,1,1,1,:) = psy.psychopost;
-        post1 = bsxfun(@times, w, post1);
-        post0 = bsxfun(@times, w, post0);
         r1 = sum(bsxfun(@times, w, r1), 5);
     end
     
     switch lower(method)
         case {'var','variance'}            
-            post0 = sum(bsxfun(@times, post0, w), 5);
-            post1 = sum(bsxfun(@times, post1, w), 5);            
-            post1 = squeeze(post1);
-            post0 = squeeze(post0);
+            post0 = squeeze(sum(post0, 5));
+            post1 = squeeze(sum(post1, 5));            
             index = find(vars,1);
             switch index
                 case 1; qq = psy.mu(:);
@@ -225,12 +245,22 @@ if nargin > 0
                 for k = 1:Nfuns
                     [~,idx(:,:,:,1,k)] = min(abs(psy.f{k}-anchors(jj)),[],4);
                 end
-                mean1 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post1,idx),1),2),3)),5);
-                mean0 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post0,idx),1),2),3)),5);
-                var1 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post1,idx.^2),1),2),3)),5) - mean1.^2;
-                var0 = sum(bsxfun(@times,w,sum(sum(sum(bsxfun(@times,post0,idx.^2),1),2),3)),5) - mean0.^2;
+                mean1 = sum(sum(sum(sum(bsxfun(@times,post1,idx),1),2),3),5);
+                mean0 = sum(sum(sum(sum(bsxfun(@times,post0,idx),1),2),3),5);
+                var1 = sum(sum(sum(sum(bsxfun(@times,post1,idx.^2),1),2),3),5) - mean1.^2;
+                var0 = sum(sum(sum(sum(bsxfun(@times,post0,idx.^2),1),2),3),5) - mean0.^2;
                 target = target + r1(:).*var1(:) + (1-r1(:)).*var0(:);
             end
+            
+        case {'model'}
+            H1 = -u1.*log(u1);
+            H0 = -u0.*log(u0);            
+            H1(~isfinite(H1)) = 0;
+            H0(~isfinite(H0)) = 0;
+            H1 = sum(H1,5);
+            H0 = sum(H0,5);
+            target = r1(:).*H1(:) + (1-r1(:)).*H0(:);
+            
             
         otherwise
             error('Unknown method. Allowed methods are ''var'' and ''ent'' for, respectively, predicted variance and predicted entropy minimization.');
@@ -291,7 +321,7 @@ end
 
 
 %--------------------------------------------------------------------------
-function [post1,post0,r1] = nextposterior(f,post)
+function [post1,post0,r1,u1,u0] = nextposterior(f,post,logupost)
 %NEXTPOSTERIOR Compute posteriors on next trial depending on possible outcomes
 
     mf = 1-f;
@@ -300,4 +330,13 @@ function [post1,post0,r1] = nextposterior(f,post)
     post0 = bsxfun(@times, post, mf);
     post1 = bsxfun(@rdivide, post1, sum(sum(sum(post1,1),2),3));
     post0 = bsxfun(@rdivide, post0, sum(sum(sum(post0,1),2),3));    
+    
+    if nargin > 2 && nargout > 3
+        logupost1 = bsxfun(@plus, logupost, log(f));
+        logupost0 = bsxfun(@plus, logupost, log(mf));
+        z0 = max(logupost0(:));
+        u0 = log(sum(sum(sum(exp(logupost0 - z0),1),2),3));
+        z1 = max(logupost1(:));
+        u1 = log(sum(sum(sum(exp(logupost1 - z1),1),2),3));        
+    end
 end

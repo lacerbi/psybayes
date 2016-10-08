@@ -23,14 +23,14 @@ if newsession
     MinFreq = 1500;     % Minimum frequency (best is somewhere above 1000 Hz)
     psy.range.x = [log(MinFreq),log(8000),61];      % Stimulus range in log Hz
     psy.range.mu = [log(MinFreq),log(6000),31];     % Psychometric function mean in log Hz
-    psy.range.sigma = [0.1,2,21];                   % The range for sigma is automatically converted to log spacing
-    psy.range.lambda = [0,0.15,15];
+    psy.range.sigma = [0.1,2,19];                   % The range for sigma is automatically converted to log spacing
+    psy.range.lambda = [0,0.15,11];
     % psy.range.lambda = [0.05-eps,0.05+eps,2];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
     psy.priors.mu = [log(MinFreq),2];   % mean and std of (truncated) Gaussian prior over MU
     psy.priors.logsigma = [0,1];        % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
-    psy.priors.lambda = [2 50];         % alpha and beta parameters of beta pdf over LAMBDA
+    psy.priors.lambda = [1 50];         % alpha and beta parameters of beta pdf over LAMBDA
 
     % Units -- used just for plotting in axis labels and titles
     psy.units.x = 'log Hz';
@@ -53,7 +53,7 @@ plotflag = 1;       % Plot visualization
 % Parameters of simulated observer
 mu = log(3000);
 sigma = 0.4;
-lambda = 0.07;
+lambda = 0.15;
 gamma = psy.gamma;
 
 %--------------------------------------------------------------------------
