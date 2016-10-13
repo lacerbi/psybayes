@@ -53,7 +53,7 @@ plotflag = 1;       % Plot visualization
 % Parameters of simulated observer
 mu = log(3000);
 sigma = 0.4;
-lambda = 0.15;
+lambda = 0.04;
 gamma = psy.gamma;
 
 %--------------------------------------------------------------------------
