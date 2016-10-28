@@ -1,4 +1,4 @@
-%PSYTEST_AUDITORY Test of PSYBAYES for change localization experiment.
+%PSYTEST_CHANGELOC Test of PSYBAYES for change localization experiment.
 %
 %  See also PSYBAYES, PSYBAYES_PLOT, PSYTEST.
 
