@@ -147,7 +147,6 @@ else
 end
 
 psy.f = [];
-psy.mf = [];
 
 psy.xnext = [];
 

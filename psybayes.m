@@ -81,7 +81,7 @@ else
 end
     
 % Precompute psychometric function
-if isempty(psy.f) || isempty(psy.mf)
+if isempty(psy.f)
     for k = 1:Nfuns
         psy.f{k} = psychofun{k}(psy.x,psy.mu,psy.sigma,psy.lambda,psy.gamma);
         % Check if last stimulus is easy stimulus (by default Inf)
@@ -100,6 +100,8 @@ end
 if ~isempty(xi) && ~isempty(yi)
     for k = 1:Nfuns
         for i = 1:numel(xi)
+            
+            % Maximum precision stimulus
             if isinf(xi(i))
                 if isempty(psy.gamma)
                     if yi(i) == 1
