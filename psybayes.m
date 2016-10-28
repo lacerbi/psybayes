@@ -133,6 +133,15 @@ if ~isempty(xi) && ~isempty(yi)
     
     psy.ntrial = psy.ntrial + numel(xi);
     psy.data = [psy.data; xi(:) yi(:)];
+        
+    % Update refractory times list
+    psy.reflist = max(psy.reflist - 1, 0);
+    if psy.reftime > 0 && isfinite(xi)
+        idx = (psy.x <= xi + psy.refradius) & (psy.x >= xi - psy.refradius);
+        wtrials(1,1,1,:) = geornd(1/(1+psy.reftime)*ones(1,sum(idx)));
+        psy.reflist(idx) = max(wtrials, psy.reflist(idx));
+    end
+    
 end
 
 % Compute posterior over psychometric functions
@@ -161,12 +170,20 @@ else
     xindex = true(size(psy.x));
 end
 
+% Consider only available stimuli
+xindex = xindex & (psy.reflist == 0);
+
+% No stimuli are available, free some stimuli and reset refractory list
+if all(xindex == 0)
+    xindex(psy.reflist == min(psy.reflist)) = 1;
+    psy.reflist = zeros(size(psy.x));
+end
+
 % Compute sampling point X that minimizes expected chosen criterion
 if nargin > 0
         
     Nx = numel(psy.x);
         
-    xred = psy.x(xindex);
     r1 = zeros(1,1,1,Nx,Nfuns);
     post1 = zeros([size(psy.post{1}),Nx,Nfuns]);
     post0 = zeros([size(psy.post{1}),Nx,Nfuns]);
@@ -178,10 +195,12 @@ if nargin > 0
     for k = 1:Nfuns
         if Nfuns > 1
             % Compute posteriors and unnormalized model evidence at next step for R=1 and R=0
-            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k),u1(1,1,1,:,k),u0(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k},psy.logupost{k});
+%            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k),u1(1,1,1,:,k),u0(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k},psy.logupost{k});
+            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k),u1(1,1,1,:,k),u0(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,:),psy.post{k},psy.logupost{k});
         else
             % Compute posteriors at next step for R=1 and R=0
-            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k});
+            %[post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,xindex),psy.post{k});
+            [post1(:,:,:,:,k),post0(:,:,:,:,k),r1(1,1,1,:,k)] = nextposterior(psy.f{k}(:,:,:,:),psy.post{k});
         end
     end
     
@@ -270,7 +289,8 @@ if nargin > 0
     psy.target = target(:)';
     
     % Location X that minimizes target metric
-    [~,index] = min(target);
+    [~,index] = min(target(xindex));
+    xred = psy.x(xindex);
     xnext = xred(index);
     
     psy.xnext = xnext;
@@ -315,6 +335,7 @@ end
 % Only one argument assumes that this is the final call
 if nargin < 2    
     psy.f = [];     % Empty some memory
+    psy.reflist = zeros(size(psy.x));   % Reset refractory times list
 end
 
 end
@@ -339,4 +360,14 @@ function [post1,post0,r1,u1,u0] = nextposterior(f,post,logupost)
         z1 = max(logupost1(:));
         u1 = log(sum(sum(sum(exp(logupost1 - z1),1),2),3));        
     end
+end
+
+%--------------------------------------------------------------------------
+function r = geornd(p)
+%GEORND Random arrays from the geometric distribution.
+
+p(p <= 0 | p > 1) = NaN;    % Return NaN for illegal parameter values
+r = ceil(abs(log(rand(size(p))) ./ log(1 - p)) - 1); % == geoinv(u,p)
+r(r < 0) = 0;   % Force a zero when p==1, instead of -1
+
 end

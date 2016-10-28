@@ -47,9 +47,6 @@ end
 psisd = sqrt(sum(bsxfun(@times, psy.psychopost',psisd),1) - psimean.^2);
 hold off;
 
-%area(x, psimean + psisd, 'EdgeColor', 'none', 'FaceColor', 0.8*[1 1 1]);
-%hold on;
-%area(x, psimean - psisd, 'EdgeColor', 'none', 'FaceColor', [1 1 1]);
 fill([x fliplr(x)], [psimean+psisd, fliplr(psimean-psisd)], 0.8*[1 1 1], 'EdgeColor', 'none'); %, 'FaceColor', 0.8*[1 1 1]);
 hold on;
 

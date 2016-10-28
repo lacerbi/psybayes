@@ -85,12 +85,6 @@ if isempty(psy.x)
     psy.x(1,1,1,:) = linspace(psy.mu(1),psy.mu(end),nx);
 end
 
-if 0
-    x = [psy.x(:); Inf];
-    psy.x = [];
-    psy.x(1,1,1,:) = x;
-end
-
 if isfield(psyinfo,'units')
     psy.units = psyinfo.units;
 else
@@ -156,6 +150,24 @@ psy.f = [];
 psy.mf = [];
 
 psy.xnext = [];
+
+% Stimulus refractory time (avoid representing same stimulus for a while)
+psy.reftime = []; psy.refradius = [];
+
+% Refractory time constant (average run length of geometric distribution)
+if isfield(psyinfo,'reftime')
+    psy.reftime = psyinfo.reftime;
+end
+if isempty(psy.reftime); psy.reftime = 0; end
+
+% Waiting radius (avoid representing stimuli within this radius)
+if isfield(psyinfo,'refradius')
+    psy.refradius = psyinfo.refradius;
+end
+if isempty(psy.refradius); psy.refradius = 0; end
+
+% Initialize refractory times list
+psy.reflist = zeros(size(psy.x));
 
 % Set psychometric function
 if isfield(psyinfo,'psychofun'); psy.psychofun = psyinfo.psychofun; end

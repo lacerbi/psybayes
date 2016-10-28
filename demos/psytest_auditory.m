@@ -38,6 +38,10 @@ if newsession
     psy.units.sigma = 'log Hz';
     psy.units.lambda = [];
     psy.units.psychofun = {'Normal','Logistic','Gumbel'};
+    
+    % Refractory time before presenting same stimulus again
+    psy.reftime = 3;        % Expected number of trials (geometric distribution)
+    psy.refradius = 0.05;   % Refractory radius around stimulus (in x units)    
 else    
     filename = 'psy.mat';   % Choose your file name
     load(filename,'psy');   % Load PSY structure from file

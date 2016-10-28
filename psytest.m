@@ -24,21 +24,25 @@ if newsession
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
     psy.range.x = [1.5,4.5,61];
-    psy.range.mu = [2,4,51];
-    psy.range.sigma = [0.05,1,25];      % The range for sigma is automatically converted to log spacing
-    psy.range.lambda = [0,0.1,25];
+    psy.range.mu = [2,4,41];
+    psy.range.sigma = [0.05,1,21];      % The range for sigma is automatically converted to log spacing
+    psy.range.lambda = [0,0.1,15];
     %psy.range.lambda = [0.05,0.05,1];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
     psy.priors.mu = [3,2];                  % mean and std of (truncated) Gaussian prior over MU
     psy.priors.logsigma = [log(0.5),Inf];   % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
-    psy.priors.lambda = [2 50];             % alpha and beta parameter of beta pdf over LAMBDA
+    psy.priors.lambda = [1 50];             % alpha and beta parameter of beta pdf over LAMBDA
 
     % Units -- used just for plotting in axis labels and titles
     psy.units.x = 'cm';
     psy.units.mu = 'cm';
     psy.units.sigma = 'cm';
     psy.units.lambda = [];
+    
+    % Refractory time before presenting same stimulus again
+    psy.reftime = 3;        % Expected number of trials (geometric distribution)
+    psy.refradius = 0;      % Refractory radius around stimulus (in x units)
 else    
     filename = 'psy.mat';   % Choose your file name
     load(filename,'psy');   % Load PSY structure from file
@@ -46,7 +50,7 @@ end
 
 method = 'ent';     % Minimize the expected posterior entropy
 % vars = [0 1 0];   % Minimize posterior entropy of the mean only
-vars = [1 1 1];     % Minimize joint posterior entropy of mean, sigma and lambda
+vars = [1 1 0];     % Minimize joint posterior entropy of mean and sigma (PSI-marginal method)
 plotflag = 1;       % Plot visualization
 
 %--------------------------------------------------------------------------
