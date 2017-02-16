@@ -1,4 +1,4 @@
-%PSYTEST_CHANGELOC Test of PSYBAYES for change localization experiment.
+%PSYTEST_ORIENTATION Test of PSYBAYES for orientation experiment.
 %
 %  See also PSYBAYES, PSYBAYES_PLOT, PSYTEST.
 
@@ -10,37 +10,35 @@ if newsession
     % Initialize PSY structure
     psy = [];
 
-    % Set chance level (for PCORRECT psychometric functions)
-    psy.gamma = 0.25;
-
     % Specify user-defined psychometric function (as a string)
-    psy.psychofun{1} = '@(x,mu,sigma,lambda,gamma) psyfun_pcorrect(x,mu,sigma,lambda,gamma,@psygumbelcdf);';
-    psy.psychofun{2} = '@(x,mu,sigma,lambda,gamma) psyfun_pcorrect(x,mu,sigma,lambda,gamma,@psynormcdf);';
-    psy.psychofun{3} = '@(x,mu,sigma,lambda,gamma) psyfun_pcorrect(x,mu,sigma,lambda,gamma,@psylogicdf);';
+    psy.psychofun{1} = '@(x,mu,sigma,lambda,gamma) psyfun_yesno(x,mu,sigma,lambda,gamma,@psynormcdf);';
     
     % Define range for stimulus and for parameters of the psychometric function
     % (lower bound, upper bound, number of points)
-    MinContrast = 1;     % Minimum contrast
-    psy.range.x = [log(MinContrast),log(100),21];      % Stimulus range in log Hz
-    psy.range.mu = [log(MinContrast),log(50),31];     % Psychometric function mean in log Hz
-    psy.range.sigma = [0.1,4,19];                   % The range for sigma is automatically converted to log spacing
+    
+    x = [0.25:0.25:1 1.4:0.4:3 3.5:0.5:5 6:10 12:2:20 22.5:2.5:45];
+    x = [-fliplr(x),x];
+    
+    psy.x = x;           % Stimulus grid in orientation degrees
+    psy.range.mu = [-12,12,31];     % Psychometric function mean
+    psy.range.sigma = [0.5,45,41];                   % The range for sigma is automatically converted to log spacing
     psy.range.lambda = [0,0.5,21];
     % psy.range.lambda = [0.05-eps,0.05+eps,2];  % This would fix the lapse rate to 0.05
 
     % Define priors over parameters
-    psy.priors.mu = [log(MinContrast),4];   % mean and std of (truncated) Gaussian prior over MU
-    psy.priors.logsigma = [0,1];        % mean and std of (truncated) Gaussian prior over log SIGMA (Inf std means flat prior)
-    psy.priors.lambda = [3 15];         % alpha and beta parameters of beta pdf over LAMBDA
+    psy.priors.mu = [0,3];              % mean and sigma of (truncated) Student's t prior over MU
+    psy.priors.logsigma = [2.05,1.40];  % mean and sigma of (truncated) Student's t prior over log SIGMA (Inf std means flat prior)
+    psy.priors.lambda = [1 19];         % alpha and beta parameters of beta pdf over LAMBDA
 
     % Units -- used just for plotting in axis labels and titles
-    psy.units.x = 'log';
-    psy.units.mu = 'log';
-    psy.units.sigma = 'log';
+    psy.units.x = 'deg';
+    psy.units.mu = 'deg';
+    psy.units.sigma = 'log deg';
     psy.units.lambda = [];
-    psy.units.psychofun = {'Gumbel','Normal','Logistic'};
+    psy.units.psychofun = {'Normal'};
     
     % Refractory time before presenting same stimulus again
-    psy.reftime = 2;        % Expected number of trials (geometric distribution)
+    psy.reftime = 0;        % Expected number of trials (geometric distribution)
     psy.refradius = 0;      % Refractory radius around stimulus (in x units)    
 else    
     filename = 'psy.mat';   % Choose your file name
@@ -55,10 +53,10 @@ plotflag = 1;       % Plot visualization
 %--------------------------------------------------------------------------
 
 % Parameters of simulated observer
-mu = log(40);
-sigma = 1.4;
+mu = 1;
+sigma = exp(2.8);
 lambda = 0.15;
-gamma = psy.gamma;
+gamma = [];
 
 %--------------------------------------------------------------------------
 % Start running
@@ -117,7 +115,7 @@ for iTrial = 1:Ntrials
         fprintf(['%s: %.3f' sep], psy.units.psychofun{k}, psy.psychopost(k));
     end
     drawnow;    
-    % pause;
+    pause;
 end
 
 % Once you are done, clean PSY struct from temporary variables

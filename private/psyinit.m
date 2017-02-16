@@ -1,5 +1,8 @@
-function [psy,Nfuns] = psyinit(psyinfo)
+function [psy,Nfuns] = psyinit(psyinfo,Ncnd)
 %PSYINIT Initialize PSY struct.
+
+% Total number of conditions (one by default)
+if nargin < 2 || isempty(Ncnd); Ncnd = 1; end
 
 psy = [];
 
@@ -94,25 +97,25 @@ else
     psy.units.lambda = []; 
 end
 
-% By default, very wide Gaussian prior on mu with slight preference for
+% By default, wide Student's t prior on mu with slight preference for
 % the middle of the stimulus range
-muprior = [mean(psy.mu),psy.mu(end)-psy.mu(1)];    % mean and std
+muprior = [mean(psy.mu),0.5*(psy.mu(end)-psy.mu(1)),3];    % mean, sigma and nu
 if isfield(psyinfo,'priors') && ~isempty(psyinfo.priors)
     if isfield(psyinfo.priors,'mu') && ~isempty(psyinfo.priors.mu)
-        muprior = psyinfo.priors.mu;        
+        muprior(1:numel(psyinfo.priors.mu)) = psyinfo.priors.mu;        
     end
 end
-priormu = exp(-0.5.*((psy.mu-muprior(1))/muprior(2)).^2);  
+priormu = exp(logtpdf(psy.mu,muprior(1),muprior(2),muprior(3)));
 
 % By default flat prior on log sigma (Jeffrey's 1/sigma prior in sigma 
-% space); more in general log-normal prior
-logsigmaprior = [mean(psy.logsigma),Inf];    % mean and std
+% space); more in general log-Student-t prior
+logsigmaprior = [mean(psy.logsigma),Inf,3];    % mean, sigma and nu
 if isfield(psyinfo,'priors') && ~isempty(psyinfo.priors)
     if isfield(psyinfo.priors,'logsigma') && ~isempty(psyinfo.priors.logsigma)
-        logsigmaprior = psyinfo.priors.logsigma;
+        logsigmaprior(1:numel(psyinfo.priors.logsigma)) = psyinfo.priors.logsigma;
     end
 end
-priorlogsigma = exp(-0.5.*((psy.logsigma-logsigmaprior(1))/logsigmaprior(2)).^2);  
+priorlogsigma = exp(logtpdf(psy.logsigma,logsigmaprior(1),logsigmaprior(2),logsigmaprior(3)));
 
 % Beta(a,b) prior on lambda, with correction
 lambdaprior = [1,19];
@@ -127,6 +130,12 @@ temp = [0, temp + 0.5*[diff(temp),0]];
 a = lambdaprior(1); b = lambdaprior(2);
 priorlambda(1,1,:) = betainc(temp(2:end),a,b) - betainc(temp(1:end-1),a,b);
 
+% If using multiple conditions, divide prior
+if Ncnd > 1
+    fprintf('Sharing prior over LAMBDA across %d conditions.\n', Ncnd);
+    priorlambda = priorlambda.^(1/Ncnd);
+end
+
 priormu = priormu./sum(priormu);
 priorlogsigma = priorlogsigma./sum(priorlogsigma);
 priorlambda = priorlambda./sum(priorlambda);
@@ -135,6 +144,10 @@ priorlambda = priorlambda./sum(priorlambda);
 psy.post{1} = bsxfun(@times,bsxfun(@times,priormu,priorlogsigma),priorlambda);
 for k = 2:Nfuns; psy.post{k} = psy.post{1}; end
 for k = 1:Nfuns; psy.logupost{k} = log(psy.post{k}); end
+
+% Posterior over lambda at iteration zero
+psy.postlambda{1} = priorlambda;
+for k = 2:Nfuns; psy.postlambda{k} = psy.postlambda{1}; end
 
 % Define sigma in addition to log sigma
 psy.sigma = exp(psy.logsigma);
@@ -184,3 +197,21 @@ if Nfuns > 1
         psy.psychoprior = ones(1,Nfuns)/Nfuns;
     end
 end
+
+end
+
+%--------------------------------------------------------------------------
+function y = logtpdf(x,mu,sigma,nu)
+%LOGTPDF Log pdf of Student's t distribution.
+
+if sigma == Inf     % Flat log prior
+    y = zeros(size(x));
+elseif nu == Inf    % Student's t with infinite degrees of freedom is Gaussian
+    y = -0.5*log(2*pi*sigma^2) -0.5*((x-mu)/sigma).^2;
+else
+    y = gammaln(0.5*(nu+1)) - gammaln(0.5*nu) - 0.5*log(pi*nu*sigma^2) ...
+        - 0.5*(nu+1) * (1 + 1/nu * ((x-mu)/sigma).^2);
+end
+
+end
+

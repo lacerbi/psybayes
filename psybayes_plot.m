@@ -74,7 +74,9 @@ if ~isempty(xnext)
     plot([xnext,xnext],[0,1],':r', 'LineWidth', 2);
 end
 if ~isempty(psy.data)
-    scatter(psy.data(:,1),psy.data(:,2),20,'ko','MarkerFaceColor','r','MarkerEdgeColor','none');
+    % Plot only finite data
+    data = psy.data(all(isfinite(psy.data),2),:);
+    scatter(data(:,1),data(:,2)==1,20,'ko','MarkerFaceColor','r','MarkerEdgeColor','none');
 end
 box off; set(gca,'TickDir','out');    
 if ~isempty(psy.units.x); string = [' (' psy.units.x ')']; else string = []; end
