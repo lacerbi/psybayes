@@ -218,8 +218,16 @@ if nargin > 0
     % Marginalize over unrequested variables
     index = find(~vars);
     for iTheta = index
-        post1 = sum(post1,iTheta);
-        post0 = sum(post0,iTheta);
+        if iTheta ==3 && ndims(post1)==3
+            % BK: Special case: lambda is not being estimated (vars(3) ==0),
+            % but then the post1 will not have this dimension
+            % because it gets removed automatically as the trailing
+            % dimension in psy.post. So we cannot marginalize here over 3
+            % because that now contains the x parameter. 
+        else
+            post1 = sum(post1,iTheta);
+            post0 = sum(post0,iTheta);
+        end
     end
         
     if Nfuns > 1
@@ -360,7 +368,7 @@ function [post1,post0,r1,u1,u0] = nextposterior(f,post,logupost)
     post1 = bsxfun(@times, post, f);
     r1 = sum(sum(sum(post1,1),2),3);
     post0 = bsxfun(@times, post, mf);
-    post1 = bsxfun(@rdivide, post1, sum(sum(sum(post1,1),2),3));
+    post1 = bsxfun(@rdivide, post1, r1);
     post0 = bsxfun(@rdivide, post0, sum(sum(sum(post0,1),2),3));    
     
     if nargin > 2 && nargout > 3
